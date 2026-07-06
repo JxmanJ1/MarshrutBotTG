@@ -1,0 +1,199 @@
+# Инструкция по сборке и запуску Route Optimizer Bot
+
+## 1. Установка инструментов разработки на macOS
+
+1. Откройте Terminal.
+2. Установите Xcode Command Line Tools, если они не установлены:
+
+```bash
+xcode-select --install
+```
+
+3. Установите Homebrew, если ещё не установлен:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+4. Убедитесь, что в PATH присутствует Homebrew. В Apple Silicon это обычно `/opt/homebrew/bin`.
+
+## 2. Установка зависимостей через Homebrew
+
+```bash
+brew install cmake pkg-config git boost openssl curl nlohmann-json wkhtmltopdf
+```
+
+Если команда `brew` не найдена, проверьте установку Homebrew и перезапустите Terminal.
+
+## Windows (MSYS2 / Visual Studio)
+
+Для Windows рекомендуется использовать MSYS2 либо Visual Studio с vcpkg.
+
+### MSYS2
+1. Скачайте и установите MSYS2 с https://www.msys2.org.
+2. Откройте MSYS2 MinGW x64 shell.
+3. Обновите пакеты:
+
+```bash
+pacman -Syu
+```
+
+4. Установите зависимости:
+
+```bash
+pacman -S --needed mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc \
+    mingw-w64-x86_64-boost mingw-w64-x86_64-openssl \
+    mingw-w64-x86_64-curl mingw-w64-x86_64-nlohmann-json \
+    mingw-w64-x86_64-wkhtmltopdf
+```
+
+5. Сборка `tgbot-cpp`:
+
+```bash
+git clone https://github.com/reo7sp/tgbot-cpp.git
+cd tgbot-cpp
+mkdir build && cd build
+cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF ..
+cmake --build . -j$(nproc)
+cmake --install . --prefix /mingw64
+```
+
+6. Сборка проекта:
+
+```bash
+cd /c/Users/YourUser/Desktop/telegram-route-bot
+mkdir -p build && cd build
+cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=/mingw64 ..
+cmake --build . -j$(nproc)
+```
+
+### Visual Studio + vcpkg
+
+1. Установите Visual Studio с компонентами C++ Desktop.
+2. Скачайте и установите vcpkg:
+
+```bash
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.bat
+```
+
+3. Установите зависимости через vcpkg:
+
+```bash
+vcpkg install curl nlohmann-json boost openssl
+```
+
+4. Соберите `tgbot-cpp` через vcpkg или вручную, указав `CMAKE_TOOLCHAIN_FILE`.
+
+5. Соберите проект:
+
+```bash
+cmake -G "Visual Studio 17 2022" \
+      -DCMAKE_TOOLCHAIN_FILE=path\\to\\vcpkg.cmake \
+      ..
+cmake --build . --config Release
+```
+
+### Запуск на Windows
+
+В MSYS2 MinGW x64 shell:
+
+```bash
+export TELEGRAM_BOT_TOKEN="ваш_токен_від_BotFather"
+./route_bot.exe
+```
+
+В Windows CMD:
+
+```bat
+set TELEGRAM_BOT_TOKEN=ваш_токен_від_BotFather
+route_bot.exe
+```
+
+В PowerShell:
+
+```powershell
+$env:TELEGRAM_BOT_TOKEN = "ваш_токен_від_BotFather"
+./route_bot.exe
+```
+
+## 4. Сборка и установка tgbot-cpp
+
+`tgbot-cpp` не входит в стандартные пакеты Homebrew, поэтому его нужно собрать вручную:
+
+```bash
+git clone https://github.com/reo7sp/tgbot-cpp.git
+cd tgbot-cpp
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_PREFIX_PATH="$(brew --prefix)" ..
+cmake --build . -j$(sysctl -n hw.logicalcpu)
+cmake --install . --prefix "$(brew --prefix)"
+```
+
+Если при конфигурации CMake не видит `Boost` или `OpenSSL`, проверьте установлен ли Homebrew-пакет `boost` и `openssl`, а затем добавьте флаг `-DCMAKE_PREFIX_PATH="$(brew --prefix)"`.
+
+## 5. Сборка проекта
+
+Перейдите в корневую папку проекта и выполните сборку:
+
+```bash
+cd /Users/admin/Desktop/telegram-route-bot
+mkdir -p build && cd build
+cmake -DCMAKE_PREFIX_PATH="$(brew --prefix)" ..
+cmake --build . -j$(sysctl -n hw.logicalcpu)
+```
+
+Если CMake не найден, установите его:
+
+```bash
+brew install cmake
+```
+
+## 6. Запуск бота
+
+Перед запуском задайте переменную окружения с токеном Telegram-бота:
+
+```bash
+export TELEGRAM_BOT_TOKEN="ваш_токен_від_BotFather"
+```
+
+Запустите собранный исполняемый файл:
+
+```bash
+./route_bot
+```
+
+## 7. Что делать, если не работает
+
+- Убедитесь, что `TELEGRAM_BOT_TOKEN` установлен корректно.
+- Проверьте, что `wkhtmltopdf` доступен в PATH:
+
+```bash
+command -v wkhtmltopdf
+```
+
+- Если CMake не может найти `TgBot`, проверьте, что `tgbot-cpp` был установлен в тот же префикс, который вы передали в `CMAKE_PREFIX_PATH`.
+- Если сборка не проходит, запустите CMake заново в чистой папке `build`:
+
+```bash
+rm -rf build
+mkdir build && cd build
+cmake -DCMAKE_PREFIX_PATH="$(brew --prefix)" ..
+cmake --build . -j$(sysctl -n hw.logicalcpu)
+```
+
+## 8. Как использовать бота
+
+1. Отправьте боту список адресов, по одному адресу на строку.
+2. Первая строка будет считаться стартовой точкой маршрута.
+3. Бот вернёт два файла: `.xlsx` и `.pdf`.
+
+## 9. Особенности работы
+
+- Геокодирование выполняется через публичный API Nominatim (OpenStreetMap).
+- Между запросами к Nominatim делается задержка минимум 1 секунда.
+- PDF формируется через `wkhtmltopdf`, Excel-файл создаётся библиотекой OpenXLSX.
