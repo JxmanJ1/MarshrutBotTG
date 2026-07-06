@@ -74,9 +74,8 @@ To get a token, talk to [@BotFather](https://t.me/BotFather) on Telegram and cre
 Send the bot a list of addresses — one per line:
 
 ```
-Warehouse; Zodchikh St 52, Kyiv
-Office; Pokrovska St 52, Bilohorodka, Kyiv Oblast
-Client; Zoryane St 2, Bilohorodka, Kyiv Oblast
+Warehouse; Kyiv
+NAME; ADRESS
 ```
 
 The format is: `Point Name; Full Address` — the name part is optional. If no semicolon is present, the entire line is treated as an address.
